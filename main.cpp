@@ -1,7 +1,11 @@
 #include <iostream>
 #include <fstream>
 #include <cstring>
+#include <conio.h>
 #include <stdlib.h>
+#include <exception>
+#include <string>
+#include <vector>
 
 using namespace std;
 
@@ -83,11 +87,6 @@ public:
             data[i]=new_data.data[i];
     }
 
-    const Time& operator[](int index)
-    {
-        return data[index];
-    }
-
     void add(const Time& time)
     {
         size++;
@@ -145,7 +144,6 @@ private:
 public:
     Movie()
     {
-
     }
 
     Movie(char* movie_title, char* movie_type, char* movie_genre, int movie_duration)
@@ -154,6 +152,10 @@ public:
         strcpy(type, movie_type);
         strcpy(genre, movie_genre);
         duration = movie_duration;
+    }
+
+    ~Movie()
+    {
     }
 
     const char* getTitle() const
@@ -175,9 +177,10 @@ public:
 
     friend ostream & operator << (ostream &out, const Movie &movie);
 
-    static MovieVector get_all();
+    static MovieVector get_all(); // (static method)
 
 };
+
 ostream & operator << (ostream &out, const Movie &movie)
 {
     out <<movie.title <<" -> " <<movie.type <<", " <<movie.genre <<", " <<movie.duration <<" min";
@@ -206,7 +209,7 @@ public:
         }
     }
 
-    MovieVector(const MovieVector &new_data) // (copy constructor)
+    MovieVector(const MovieVector &new_data)
     {
         size = new_data.size;
         if (!size)
@@ -246,7 +249,7 @@ public:
         return size;
     }
 
-    void operator= (const MovieVector &x) // (overloading the = operator)
+    void operator= (const MovieVector &x)
     {
         delete[] data;
         size = x.size;
@@ -348,7 +351,7 @@ public:
         }
     }
 
-    CinemaVector(const CinemaVector &new_data) // (copy constructor)
+    CinemaVector(const CinemaVector &new_data)
     {
         size = new_data.size;
         if (!size)
@@ -386,7 +389,7 @@ public:
         return size;
     }
 
-    void operator= (const CinemaVector &x) // (overloading the = operator)
+    void operator= (const CinemaVector &x)
     {
         delete[] data;
         size = x.size;
@@ -527,7 +530,7 @@ public:
         return size;
     }
 
-    void operator= (const ProgramVector &x) // (overloading the = operator)
+    void operator= (const ProgramVector &x)
     {
         delete[] data;
 
@@ -591,8 +594,21 @@ class Ticket
 {
 private:
     int quantity;
-    float price;
     Program program;
+
+protected:
+    float price;
+    string type;
+
+    const float getPrice() const
+    {
+        return price;
+    }
+
+    const int getQuantity() const
+    {
+        return quantity;
+    }
 
 public:
     Ticket()
@@ -600,36 +616,113 @@ public:
 
     }
 
-    Ticket(int ticket_quantity, float ticket_price, Program ticket_program)
+    Ticket(int ticket_quantity, float ticket_price, Program ticket_program) :
+        quantity(ticket_quantity), price(ticket_price), program(ticket_program)
     {
-        quantity = ticket_quantity;
-        price = ticket_price;
-        program = ticket_program;
+        type = "regular";
     }
 
-    int getQuantity()
+    const string getType() const
     {
-        return quantity;
+        return type;
     }
 
-    void setQuantity(int new_quantity)
-    {
-        quantity = new_quantity;
-    }
-
-    float getPrince()
-    {
-        return price;
-    }
-
-    void setPrice(float new_price)
-    {
-        price = new_price;
-    }
-
-    float calculate_total_price()
+    virtual float calculate_total_price()
     {
         return price * quantity;
+    }
+
+    friend ostream & operator << (ostream &out, const Ticket &ticket);
+};
+ostream & operator << (ostream &out, const Ticket &ticket)
+{
+    if (ticket.quantity > 0)
+        out <<ticket.quantity <<": " <<ticket.type <<endl;
+    return out;
+}
+
+class IDiscount // (interface with two methods)
+{
+public:
+    virtual double getDiscountValue() = 0;
+
+    virtual string getDiscountType() = 0;
+};
+
+class DiscountTicket : public Ticket, public IDiscount // (multiple inheritance)
+{
+private:
+    double discount;
+
+public:
+    DiscountTicket(int ticket_quantity, float ticket_price, Program ticket_program, double ticket_discount) :
+        Ticket(ticket_quantity, ticket_price, ticket_program)
+    {
+        discount = ticket_discount;
+    }
+
+    double getDiscountValue()
+    {
+        return discount;
+    }
+
+    string getDiscountType()
+    {
+        return type;
+    }
+
+    float get_discounted_price()
+    {
+        return getPrice() * discount / 100;
+    }
+
+    float calculate_total_price() override
+    {
+        return get_discounted_price() * getQuantity();
+    }
+};
+
+class ChildTicket : public DiscountTicket
+{
+public:
+    ChildTicket(int ticket_quantity, float ticket_price, Program ticket_program) :
+        DiscountTicket(ticket_quantity, ticket_price, ticket_program, 50)
+    {
+        type = "child";
+    }
+};
+
+class StudentTicket : public DiscountTicket
+{
+public:
+    StudentTicket(int ticket_quantity, float ticket_price, Program ticket_program) :
+        DiscountTicket(ticket_quantity, ticket_price, ticket_program, 40)
+    {
+        type = "student";
+    }
+};
+
+class SeniorTicket : public DiscountTicket
+{
+public:
+    SeniorTicket(int ticket_quantity, float ticket_price, Program ticket_program) :
+        DiscountTicket(ticket_quantity, ticket_price, ticket_program, 30)
+    {
+        type = "senior";
+    }
+};
+
+class ValidationException : public std::exception
+{
+private:
+    const char* message;
+
+public:
+    ValidationException(const char* msg) : message(msg) {}
+
+    const char* getMessage() const
+    {
+        return message;
     }
 };
 
@@ -640,6 +733,27 @@ private:
 	char last_name[20];
 	char email[30];
 	char phone[11];
+
+	void validate_phone(char* phone)
+	{
+        if (strlen(phone) != 10)
+            throw ValidationException("Phone number must have 10 digits.");
+        for (int ch=0; ch<strlen(phone); ch++)
+            if (phone[ch] <'0' || phone[ch] >'9')
+                throw ValidationException("Phone number must contain only digits.");
+	}
+
+	void validate_email(char* email)
+	{
+	    int ok = 0, len = strlen(email);
+        for (int ch = 0; ch<len; ch++)
+            if (email[ch] == '@')
+                ok = 1;
+        if (ok == 0)
+            throw ValidationException("Email must contain '@'.");
+        if (email[0] == '@' || email[len-1] == '@')
+            throw ValidationException("Email must not begin or end with '@'.");
+	}
 
 public:
     User()
@@ -665,10 +779,12 @@ public:
     }
     void setEmail(char new_email[30])
     {
+        validate_email(new_email);
         strcpy(email, new_email);
     }
     void setPhone(char new_phone[11])
     {
+        validate_phone(new_phone);
         strcpy(phone, new_phone);
     }
 
@@ -697,6 +813,162 @@ ostream & operator << (ostream &out, const User &user)
     return out;
 }
 
+class Order
+{
+private:
+    User user;
+    vector<Ticket*> tickets;
+
+public:
+    Order(User user_order) : user(user_order) {}
+
+    virtual ~Order() // (virtual destructor)
+    {
+        tickets.clear();
+    }
+
+    const double total_amount() const
+    {
+        int size = tickets.size();
+        double amount = 0;
+        for (int i=0; i<size; i++)
+            amount = amount + tickets[i]->calculate_total_price(); // (polymorphism)
+        return amount;
+    }
+
+    void add_ticket(Ticket* ticket)
+    {
+        tickets.push_back(ticket);
+    }
+
+    const User &getUser() const
+    {
+        return user;
+    }
+
+    friend ostream &operator << (ostream &out, const Order &order);
+};
+ostream &operator << (ostream &out, const Order &order)
+{
+    out <<order.user;
+
+    int tickets_count = order.tickets.size();
+    for (int i=0; i<tickets_count; i++)
+        out <<*(order.tickets[i]);
+
+    out <<"Total price: $" <<order.total_amount() <<endl;
+    return out;
+}
+
+class PaymentException : public ValidationException
+{
+public:
+    PaymentException(const char* msg) : ValidationException(msg) {}
+};
+
+class Payment // (abstract class)
+{
+private:
+    double amount;
+    string currency;
+    static int try_count; // (static data member)
+
+protected:
+    Payment(double amount_payment, string currency_payment)
+    {
+        amount_payment = amount;
+        currency_payment = currency;
+    }
+
+    void addTryCount()
+    {
+        try_count++;
+    }
+
+public:
+    virtual bool process_payment() = 0; // (abstract method)
+
+    double getAmount()
+    {
+        return amount;
+    }
+    string getCurrency()
+    {
+        return currency;
+    }
+
+    static int getTryCount() // (static method using static data member)
+    {
+        return try_count;
+    }
+};
+
+int Payment::try_count = 0;
+
+class CreditCardPayment : public Payment
+{
+private:
+    string number;
+    int expiration_month;
+    int expiration_year;
+    int cvv;
+
+public:
+    CreditCardPayment(string number_card, int expiration_month_card, int expiration_year_card, int cvv_card, double amount_payment, string currency_payment) :
+        Payment(amount_payment, currency_payment), number(number_card), expiration_month(expiration_month_card), expiration_year(expiration_year_card), cvv(cvv_card) {}
+
+    bool process_payment() override
+    {
+        addTryCount();
+
+        int ok = 1;
+        if (number.length() != 16)
+            throw PaymentException("Card number must contain 16 digits.");
+        for (int ch=0; ch<number.length(); ch++)
+            if (number[ch]<'0' || number[ch]>'9')
+                throw PaymentException("Card number must contain only digits.");
+        if (expiration_month < 1 || expiration_month >12)
+            throw PaymentException("Month value must be between 1 and 12.");
+        if (expiration_year < 23)
+            throw PaymentException("Card expired.");
+        else if (expiration_year == 23)
+            if (expiration_month < 4)
+                throw PaymentException("Card expired.");
+        if (cvv <100 || cvv>999)
+            throw PaymentException("CVV must contain 3 digits.");
+
+        cout <<endl <<"Processing payment..." <<endl;
+        return true;
+    }
+};
+
+class PayPalPayment : public Payment
+{
+private:
+    string account;
+
+public:
+    PayPalPayment(string account_payment, double amount_payment, string currency_payment) :
+        Payment(amount_payment, currency_payment), account(account_payment) {}
+
+    bool process_payment()
+    {
+        addTryCount();
+
+        int ok = 0;
+        for (int ch = 0; ch<account.length(); ch++)
+            if (account[ch] == '@')
+                ok = 1;
+        if (ok == 0)
+            throw PaymentException("Account must contain '@'.");
+        if (account[0] == '@' || account[account.length()-1] == '@')
+            throw PaymentException("Account must not begin or end with '@'.");
+
+        cout <<endl <<"Processing payment..." <<endl;
+        return true;
+    }
+};
+
 void show_menu_header()
 {
     system("cls"); // clear screen
@@ -704,31 +976,96 @@ void show_menu_header()
     cout <<endl;
 }
 
-void confirm_ticket()
+void show_payment(double amount, string currency)
 {
-    show_menu_header();
+    char opt = ' ';
+    Payment* payment;
 
-    cout <<"Thank you! Your reservation has been confirmed!" <<endl;
-    cout <<endl;
+    while (opt != NULL)
+    {
+        show_menu_header();
+
+        cout <<"Select a payment method (C) - card or (P) - paypal: " <<endl;
+        cin >>opt;
+
+        if (opt == 'C' || opt == 'c')
+        {
+            cout <<"Enter your card information: " <<endl;
+
+            string number;
+            int exp_month, exp_year, cvv;
+
+            try
+            {
+                cout <<"Card number: ";
+                cin >>number;
+                cout <<"Expiration month: ";
+                cin >>exp_month;
+                cout  <<"Expiration year: ";
+                cin >>exp_year;
+                cout <<"CVV: ";
+                cin >>cvv;
+            }
+            catch (ios_base::failure &ex)
+            {
+                cout <<"Invalid input. Press any key to retry." <<endl;
+                cin.clear();
+                getch();
+                continue;
+            }
+
+            payment = new CreditCardPayment(number, exp_month, exp_year, cvv, amount, currency);
+        }
+        else if (opt == 'P' || opt == 'p')
+        {
+            cout <<"Enter your account information: " <<endl;
+
+            string sir;
+            cout <<"PayPal Account: ";
+            cin >>sir;
+
+            payment = new PayPalPayment(sir, amount, currency);
+        }
+        else continue;
+
+        try
+        {
+            if (payment->process_payment())
+            {
+                cout <<"Payment was processed successfully!" <<endl;
+                cout <<"Number of tries: " <<Payment::getTryCount() <<endl;
+                delete payment;
+
+                cout <<endl <<"Press any key to exit program.";
+                getch();
+                exit(0);
+            }
+        }
+        catch (PaymentException &ex)
+        {
+            cout <<"There was an error while processing your payment: " <<ex.getMessage() <<endl;
+            cout <<"Number of tries: " <<Payment::getTryCount() <<endl;
+        }
+
+        cout <<"Press any key to retry.";
+        getch();
+    }
 }
 
-void show_ticket(const User& user, int total_price)
+void show_order(const Order& order)
 {
     show_menu_header();
 
     cout <<"Your reservation:" <<endl;
-    cout <<user;
-    cout <<"Total price: $" <<total_price <<endl;
-    cout <<endl;
+    cout <<order <<endl;
 
-    cout <<"Would you like to confirm? (Yes - Y / No - N) " ;
+    cout <<"Confirm order? Press Y to proceed to payment or press any key to cancel: ";
     char opt;
     cin >>opt;
-    if (opt == 'Y')
-        confirm_ticket();
-    else if (opt == 'N')
-        return;
-// returnarea in main menu
+    cout <<endl;
+    if (opt == 'y' || opt == 'Y')
+        show_payment(order.total_amount(), "lei");
+    // else returns movie / cinema selection
 }
 
 void book_ticket(Program program, const Time &time)
@@ -745,27 +1082,71 @@ void book_ticket(Program program, const Time &time)
     cout <<"First name: ";
     cin >>sir;
     user.setFirst_Name(sir);
+
     cout <<"Last name: ";
     cin >>sir;
     user.setLast_Name(sir);
-    cout  <<"Email: ";
-    cin >>sir;
-    user.setEmail(sir);
-    cout <<"Phone number: ";
-    cin >>sir;
-    user.setPhone(sir);
 
-    int quantity;
-    cout <<endl <<"Please introduce the number of seats: ";
+    bool ok = false;
+    while (!ok)
+    {
+        cout  <<"Email: ";
+        cin >>sir;
+        try
+        {
+            user.setEmail(sir);
+            ok = true;
+        }
+        catch (ValidationException &ex)
+        {
+            cout <<ex.getMessage() <<endl;
+        }
+    }
+
+    ok = false;
+    while (!ok)
+    {
+        cout <<"Phone number: ";
+        cin >>sir;
+        try
+        {
+            user.setPhone(sir);
+            ok = true;
+        }
+        catch (ValidationException &ex)
+        {
+            cout <<ex.getMessage() <<endl;
+        }
+    }
+
+
+    Order myorder(user);
+
+    int quantity, i = 1;
+    string type;
+    cout <<endl <<"Please enter the number of seats: " <<endl;
+
+    cout <<" - regular - full price: ";
     cin >>quantity;
+    Ticket ticket(quantity, program.getPrice(), program);
+    myorder.add_ticket(&ticket);
 
-    Ticket ticket;
-    ticket.setQuantity(quantity);
-    ticket.setPrice(program.getPrice());
+    cout <<" - child - 50% discount: ";
+    cin >>quantity;
+    ChildTicket child_ticket(quantity, program.getPrice(), program);
+    myorder.add_ticket(&child_ticket); // (upcasting)
 
-    int total_price = ticket.calculate_total_price();
+    cout <<" - student - 40% discount: ";
+    cin >>quantity;
+    StudentTicket student_ticket(quantity, program.getPrice(), program);
+    myorder.add_ticket(&student_ticket); // (upcasting)
 
-    show_ticket(user, total_price);
+    cout <<" - senior - 30% discount: ";
+    cin >>quantity;
+    SeniorTicket senior_ticket(quantity, program.getPrice(), program);
+    myorder.add_ticket(&senior_ticket); // (upcasting)
+
+    show_order(myorder);
 }
 
 void show_program_menu(const Movie& movie)
@@ -784,7 +1165,7 @@ void show_program_menu(const Movie& movie)
             cout <<i+1 <<": " <<program[i] <<endl;
         cout <<endl;
 
-        cout <<"Please select the cinema to book your ticket: ";
+        cout <<"Please select the cinema to book your ticket or 0 (zero) to return: ";
         cin >>opt;
         cout <<endl;
 
@@ -815,7 +1196,7 @@ void show_program_menu(const Cinema& cinema)
             cout <<i+1 <<": " <<program[i] <<endl;
         cout <<endl;
 
-        cout <<"Please select the movie to book your ticket: ";
+        cout <<"Please select the movie to book your ticket or 0 (zero) to return: ";
         cin >>opt;
         cout <<endl;
 
@@ -830,14 +1211,15 @@ void show_program_menu(const Cinema& cinema)
     }
 }
 
-void show_movies_menu() // functie pentru afisarea listei filme
+void show_movies_menu()
 {
+    MovieVector movies = Movie::get_all();
+
     int opt = -1;
     while (opt != 0)
     {
         show_menu_header();
 
-        MovieVector movies = Movie::get_all();
         int movies_count = movies.get_size();
         for (int i = 0; i < movies_count; i++)
         {
@@ -847,18 +1229,20 @@ void show_movies_menu() // functie pentru afisarea listei filme
         cout <<endl <<"Please select a movie number or 0 (zero) to return: ";
         cin >>opt;
         cout <<endl;
+
         if (opt >= 1 && opt <= movies_count)
             show_program_menu(movies[opt-1]);
     }
 }
-void show_cinemas_menu() // functie pentru afisarea listei cinema
+void show_cinemas_menu()
 {
+    CinemaVector cinemas = Cinema::get_all();
+
     int opt = -1;
     while (opt != 0)
     {
         show_menu_header();
 
-        CinemaVector cinemas = Cinema::get_all();
         int cinemas_count = cinemas.get_size();
         for (int i = 0; i < cinemas_count; i++)
         {
@@ -868,10 +1252,9 @@ void show_cinemas_menu() // functie pentru afisarea listei cinema
         cout <<endl <<"Please select a cinema number or 0 (zero) to return: ";
         cin >>opt;
         cout <<endl;
+
         if (opt >= 1 && opt <= cinemas_count)
             show_program_menu(cinemas[opt-1]);
-        else if (opt == 0)
-            return;
     }
 }
 
@@ -902,6 +1285,8 @@ void show_main_menu()
 
 int main()
 {
+    cin.exceptions(ios::failbit); // turn on cin exceptions
+
     show_main_menu();
 
     return 0;

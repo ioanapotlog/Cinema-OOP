@@ -1,7 +1,11 @@
 # depslib dependency file v1.0
-1681047464 source:c:\users\ioana\desktop\poo\proiect\cinema\main.cpp
+1682628808 source:c:\users\ioana\desktop\poo\proiect\cinema\main.cpp
 	<iostream>
 	<fstream>
 	<cstring>
+	<conio.h>
 	<stdlib.h>
+	<exception>
+	<string>
+	<vector>
 
