@@ -1014,7 +1014,7 @@ void show_payment(double amount, string currency)
                 continue;
             }
 
-            payment = new CreditCardPayment(number, exp_month, exp_year, cvv, amount, currency);
+            payment = new CreditCardPayment(number, exp_month, exp_year, cvv, amount, currency); // (upcasting)
         }
         else if (opt == 'P' || opt == 'p')
         {
@@ -1024,7 +1024,8 @@ void show_payment(double amount, string currency)
             cout <<"PayPal Account: ";
             cin >>sir;
 
-            payment = new PayPalPayment(sir, amount, currency);
+            PayPalPayment* paypal = new PayPalPayment(sir, amount, currency);
+            payment = dynamic_cast<Payment*>(paypal); // (downcasting)
         }
         else continue;
 
