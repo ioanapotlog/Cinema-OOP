@@ -3,15 +3,16 @@
 #include <cstring>
 #include <conio.h>
 #include <stdlib.h>
+#include <algorithm>3
 #include <exception>
 #include <string>
 #include <vector>
+#include <memory>
+#include <random>
 
 using namespace std;
 
-class MovieVector; // forward declaration
-class CinemaVector; // forward declaration
-class ProgramVector; // forward declaration
+template <class T> class Vector; // forward declaration
 
 class Time
 {
@@ -33,6 +34,11 @@ public:
         minute = x.minute;
     }
 
+    bool operator == (const Time& x)
+    {
+        return x.hour == hour && x.minute == minute;
+    }
+
     friend istream & operator >> (istream &in, Time &time);
     friend ostream & operator << (ostream &out, const Time &time);
 };
@@ -50,77 +56,28 @@ ostream & operator << (ostream &out, const Time &time) // (overloading the << op
 class TimeVector
 {
 private:
-    int size;
-    Time *data;
+    vector<shared_ptr<Time>> data;
 
 public:
-    TimeVector()
-    {
-        size = 0;
-        data = NULL;
-    }
-
-    ~TimeVector()
-    {
-        if (data != NULL)
-        {
-            delete [] data;
-            data = NULL;
-        }
-    }
-
-    TimeVector(const TimeVector &new_data) // (copy constructor)
-    {
-        size = new_data.size;
-        if (!size)
-        {
-            data = NULL;
-            return;
-        }
-        data = new Time[size];
-        if (!data)
-        {
-            size = 0;
-            return;
-        }
-        for(int i=0;i<size;i++)
-            data[i]=new_data.data[i];
-    }
+    TimeVector() {}
 
     void add(const Time& time)
     {
-        size++;
-        Time *new_data = new Time[size];
-        for (int i = 0; i < size-1; i++)
-            new_data[i] = data[i];
-        new_data[size-1] = time;
-        if (data != NULL)
-            delete [] data;
-        data = new_data;
+        data.push_back(make_shared<Time>(time));
+
     }
 
-    int get_size()
+    int get_size() const
     {
-        return size;
+        return data.size();
     }
 
-    void operator= (const TimeVector &x) // (overloading the = operator)
+    bool find(const Time& time) const // ( function in <algorithm> )
     {
-        delete[] data;
-        size = x.size;
-        if (!size)
+        return data.end() != find_if(data.begin(), data.end(), [&](shared_ptr<Time> const& item) // (iterator pattern)
         {
-            data = NULL;
-            return;
-        }
-        data = new Time[size];
-        if (!data)
-        {
-            size = 0;
-            return;
-        }
-        for(int i=0;i<x.size;i++)
-            data[i] = x.data[i];
+            return *item == time;
+        });
     }
 
     friend ostream & operator << (ostream &out, const TimeVector &times);
@@ -128,8 +85,10 @@ public:
 };
 ostream & operator << (ostream &out, const TimeVector &times)
 {
-    for (int i=0;i<times.size;i++)
-        out <<" " <<times.data[i];
+    for (const auto& time : times.data)
+    {
+        out << *time << " ";
+    }
     return out;
 }
 
@@ -177,70 +136,64 @@ public:
 
     friend ostream & operator << (ostream &out, const Movie &movie);
 
-    static MovieVector get_all(); // (static method)
+    static Vector<Movie> get_all(); // (static method)
 
 };
-
 ostream & operator << (ostream &out, const Movie &movie)
 {
     out <<movie.title <<" -> " <<movie.type <<", " <<movie.genre <<", " <<movie.duration <<" min";
     return out;
 }
 
-class MovieVector
+template <class T>
+class Vector
 {
 private:
     int size;
-    Movie *data;
+    T *data;
 
 public:
-    MovieVector()
+    Vector()
     {
         size = 0;
         data = NULL;
     }
 
-    ~MovieVector()
+    ~Vector()
     {
         if (data != NULL)
         {
+            delete[] data;
             data = NULL;
-            delete [] data;
         }
     }
 
-    MovieVector(const MovieVector &new_data)
+    Vector(const Vector& new_data)
     {
         size = new_data.size;
-        if (!size)
+        if (size == 0)
         {
             data = NULL;
             return;
         }
-        data = new Movie[size];
-        if (!data)
-        {
-            size = 0;
-            return;
-        }
-        for(int i=0;i<size;i++)
-            data[i]=new_data.data[i];
+        data = new T[size];
+        for (int i = 0; i < size; i++)
+            data[i] = new_data.data[i];
     }
 
-    const Movie& operator[](int index)
+    const T& operator[](int index)
     {
         return data[index];
     }
 
-    void add(Movie movie)
+    void add(const T& item)
     {
         size++;
-        Movie *new_data = new Movie[size];
-        for (int i = 0; i < size-1; i++)
+        T* new_data = new T[size];
+        for (int i = 0; i < size - 1; i++)
             new_data[i] = data[i];
-        new_data[size-1] = movie;
-        if (data != NULL)
-            delete [] data;
+        new_data[size - 1] = item;
+        delete[] data;
         data = new_data;
     }
 
@@ -249,29 +202,37 @@ public:
         return size;
     }
 
-    void operator= (const MovieVector &x)
+    void operator=(const Vector& x)
     {
         delete[] data;
+        size = x.size;
+        if (size == 0)
+        {
+            data = nullptr;
+            return;
+        }
+        data = new T[size];
+                delete[] data;
         size = x.size;
         if (!size)
         {
             data = NULL;
             return;
         }
-        data = new Movie[size];
+        data = new T[size];
         if (!data)
         {
             size = 0;
             return;
         }
-        for(int i=0;i<x.size;i++)
+        for (int i = 0; i < size; i++)
             data[i] = x.data[i];
     }
 };
 
-MovieVector Movie::get_all()
+Vector<Movie> Movie::get_all()
 {
-    MovieVector movies;
+    Vector<Movie>  movies;
 
     movies.add(Movie("Dirty Dancing", "2D", "Romance", 100));
     movies.add(Movie("Back To The Future", "2D", "Sci-Fi", 116));
@@ -321,7 +282,7 @@ public:
 
     friend ostream& operator << (ostream& out, const Cinema& c);
 
-    static CinemaVector get_all();
+    static Vector<Cinema> get_all();
 };
 ostream & operator << (ostream &out, const Cinema &cinema)
 {
@@ -329,89 +290,9 @@ ostream & operator << (ostream &out, const Cinema &cinema)
     return out;
 }
 
-class CinemaVector
+Vector<Cinema> Cinema::get_all()
 {
-private:
-    int size;
-    Cinema *data;
-
-public:
-    CinemaVector()
-    {
-        size = 0;
-        data = NULL;
-    }
-
-    ~CinemaVector()
-    {
-        if (data != NULL)
-        {
-            data = NULL;
-            delete [] data;
-        }
-    }
-
-    CinemaVector(const CinemaVector &new_data)
-    {
-        size = new_data.size;
-        if (!size)
-        {
-            data = NULL;
-            return;
-        }
-        data = new Cinema[size];
-        if (!data)
-        {
-            size = 0;
-            return;
-        }
-        for(int i=0;i<size;i++)
-            data[i]=new_data.data[i];
-    }
-
-    const Cinema& operator[](int index)
-    {
-        return data[index];
-    }
-    void add(Cinema cinema)
-    {
-        size++;
-        Cinema *new_data = new Cinema[size];
-        for (int i = 0; i < size-1; i++)
-            new_data[i] = data[i];
-        new_data[size-1] = cinema;
-        if (data != NULL)
-            delete [] data;
-        data = new_data;
-    }
-    int get_size()
-    {
-        return size;
-    }
-
-    void operator= (const CinemaVector &x)
-    {
-        delete[] data;
-        size = x.size;
-        if (!size)
-        {
-            data = NULL;
-            return;
-        }
-        data = new Cinema[size];
-        if (!data)
-        {
-            size = 0;
-            return;
-        }
-        for(int i=0;i<x.size;i++)
-            data[i] = x.data[i];
-    }
-};
-
-CinemaVector Cinema::get_all()
-{
-    CinemaVector cinemas;
+    Vector<Cinema> cinemas;
 
     cinemas.add(Cinema("Retro Cinema Lipscani", "street Lipscani no. 53", 50));
     cinemas.add(Cinema("Retro Cinema Victoriei", "street Calea Victoriei no. 224", 60));
@@ -455,10 +336,15 @@ public:
         return price;
     }
 
+    bool find_time(const Time& time) const
+    {
+        return start_times.find(time);
+    }
+
     friend ostream & operator << (ostream &out, const Program &program);
 
-    static ProgramVector get_for(const Movie& movie);
-    static ProgramVector get_for(const Cinema& cinema);
+    static Vector<Program> get_for(const Movie& movie);
+    static Vector<Program> get_for(const Cinema& cinema);
 
 };
 ostream & operator << (ostream &out, const Program &program)
@@ -468,122 +354,47 @@ ostream & operator << (ostream &out, const Program &program)
     return out;
 }
 
-class ProgramVector
+Vector<Program> Program::get_for(const Movie& movie)
 {
-private:
-    int size;
-    Program *data;
+    Vector<Program> programs;
 
-public:
-    ProgramVector()
-    {
-        size = 0;
-        data = NULL;
-    }
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_int_distribution<> hour_dist(10, 18);
+    uniform_int_distribution<> min_dist(1, 3);
 
-    ~ProgramVector()
-    {
-        if (data != NULL)
-        {
-            delete [] data;
-            data = NULL;
-        }
-    }
-
-    ProgramVector(const ProgramVector &new_data) // (copy constructor)
-    {
-        size = new_data.size;
-        if (!size)
-        {
-            data = NULL;
-            return;
-        }
-        data = new Program[size];
-        if (!data)
-        {
-            size = 0;
-            return;
-        }
-        for(int i=0;i<size;i++)
-            data[i]=new_data.data[i];
-    }
-
-    const Program& operator[](int index)
-    {
-        return data[index];
-    }
-
-    void add(Program program)
-    {
-        size++;
-        Program *new_data = new Program[size];
-        for (int i = 0; i < size-1; i++)
-            new_data[i] = data[i];
-        new_data[size-1] = program;
-        if (data != NULL)
-            delete [] data;
-        data = new_data;
-    }
-
-    int get_size()
-    {
-        return size;
-    }
-
-    void operator= (const ProgramVector &x)
-    {
-        delete[] data;
-
-        size = x.size;
-
-        if (!size)
-        {
-            data = NULL;
-            return;
-        }
-
-        data = new Program[size];
-
-        if (!data)
-        {
-            size = 0;
-            return;
-        }
-
-        for(int i=0;i<x.size;i++)
-            data[i] = x.data[i];
-    }
-};
-
-ProgramVector Program::get_for(const Movie& movie)
-{
-    ProgramVector programs;
-
-    CinemaVector cinemas = Cinema::get_all();
+    Vector<Cinema> cinemas = Cinema::get_all();
     int cinemas_count = cinemas.get_size();
     for (int i = 0; i < cinemas_count; i++)
     {
         TimeVector times;
-        times.add(Time(10+i%3, 30));
-        times.add(Time(15-i%2, 15+15*i%3));
-        times.add(Time(18+i%2, 30));
+        for (int j = 0;j < 3; j++)
+        {
+            times.add(Time(hour_dist(gen), 15*min_dist(gen)));
+        }
         programs.add(Program(movie, cinemas[i], times, 20));
     }
-
     return programs;
 }
 
-ProgramVector Program::get_for(const Cinema& cinema)
+Vector<Program> Program::get_for(const Cinema& cinema)
 {
-    ProgramVector programs;
+    Vector<Program> programs;
 
-    MovieVector movies = Movie::get_all();
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_int_distribution<> hour_dist(10, 18);
+    uniform_int_distribution<> min_dist(1, 3);
+
+    Vector<Movie> movies = Movie::get_all();
     int movies_count = movies.get_size();
     for (int i = 0; i < movies_count; i++)
     {
         TimeVector times;
-        times.add(Time(10+i%3, 30));
-        times.add(Time(15+i%4, 15+30*i%2));
+        for (int j = 0;j < 2; j++)
+        {
+            times.add(Time(hour_dist(gen), 15*min_dist(gen)));
+        }
         programs.add(Program(movies[i], cinema, times, 20));
     }
 
@@ -813,6 +624,15 @@ ostream & operator << (ostream &out, const User &user)
     return out;
 }
 
+template <typename T>
+T sum(const vector<T>& vec)
+{
+    T total = 0;
+    for (int i = 0; i < vec.size(); i++)
+        total += vec[i];
+    return total;
+}
+
 class Order
 {
 private:
@@ -830,10 +650,10 @@ public:
     const double total_amount() const
     {
         int size = tickets.size();
-        double amount = 0;
+        vector<double> prices;
         for (int i=0; i<size; i++)
-            amount = amount + tickets[i]->calculate_total_price(); // (polymorphism)
-        return amount;
+            prices.push_back(tickets[i]->calculate_total_price()); // (polymorphism)
+        return sum(prices);
     }
 
     void add_ticket(Ticket* ticket)
@@ -1159,7 +979,7 @@ void show_program_menu(const Movie& movie)
 
         cout <<"Program for the movie: " <<movie.getTitle() <<endl;
 
-        ProgramVector program;
+        Vector<Program> program;
         program = Program::get_for(movie);
         int i;
         for (i=0;i<program.get_size();i++)
@@ -1176,7 +996,10 @@ void show_program_menu(const Movie& movie)
             cout <<"Please select the time: ";
             cin >>time;
 
-            book_ticket(program[opt-1], time);
+            if (program[opt-1].find_time(time))
+                book_ticket(program[opt-1], time);
+            else
+                cout <<"The hour selected doesn't exist in the program!" << endl;
         }
     }
 }
@@ -1190,7 +1013,7 @@ void show_program_menu(const Cinema& cinema)
 
         cout <<"Program for the cinema: " <<cinema.getName() <<endl;
 
-        ProgramVector program;
+        Vector<Program> program;
         program = Program::get_for(cinema);
         int i;
         for (i=0;i<program.get_size();i++)
@@ -1207,14 +1030,17 @@ void show_program_menu(const Cinema& cinema)
             cout <<"Please select the time: ";
             cin >>time;
 
-            book_ticket(program[opt-1], time);
+            if (program[opt-1].find_time(time))
+                book_ticket(program[opt-1], time);
+            else
+                cout <<"The hour selected doesn't exist in the program!" << endl;
         }
     }
 }
 
 void show_movies_menu()
 {
-    MovieVector movies = Movie::get_all();
+    Vector<Movie> movies = Movie::get_all();
 
     int opt = -1;
     while (opt != 0)
@@ -1237,7 +1063,7 @@ void show_movies_menu()
 }
 void show_cinemas_menu()
 {
-    CinemaVector cinemas = Cinema::get_all();
+    Vector<Cinema> cinemas = Cinema::get_all();
 
     int opt = -1;
     while (opt != 0)
