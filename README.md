@@ -1,31 +1,30 @@
 # The Retro Cinema
-## Tema aleasa - Cinematograf
-### Clasele:
-  * Time - Reprezinta ora si minutul la care incepe un film. 
-  * TimeVector - Reprezinta un vector de tip Time si este corelata prin compunere cu clasa Time. 
-  * Movie - Reprezinta titlul, tipul, genul si durata unui film.
-  * MovieVector - Reprezinta un vector de tip Movie si este corelata prin compunere cu clasa Movie. 
-  * Cinema - Reprezinta numele, locatia si numarul de locuri unui cinematograf.
-  * CinemaVector -Reprezinta un vector de tip Cinema si este corelata prin compunere cu clasa Cinema. 
-  * Program - Reprezinta fimul, cinematograful la care este ecranizat acesta, orele la care incepe si pretul unui bilet. Este corelata prin compunere cu clasele Movie, Cinema si TimeVector.
-  * ProgramVector - Reprezinta un vector de tip Program si este corelata prin compunere cu clasa Program. 
-  * Ticket - Reprezinta numarul de bilete si pretul unui bilet.
-  * User - Reprezinta numele, prenumele, adresa de email si numarul de telefon al clientului.
+### Classes:
+  * Time - Represents the hour and minute at which a movie starts. 
+  * TimeVector - Represents a vector of type Time and is correlated through composition with the Time class. 
+  * Movie - Represents the title, type, genre, and duration of a movie.
+  * MovieVector - Represents a vector of type Movie and is correlated through composition with the Movie class. 
+  * Cinema - Represents the name, location, and number of seats of a cinema.
+  * CinemaVector - Represents a vector of type Cinema and is correlated through composition with the Cinema class. 
+  * Program - Represents the movie, the cinema where it is screened, the starting times, and the ticket price. It is correlated through composition with the Movie, Cinema, and TimeVector classes.
+  * ProgramVector - Represents a vector of type Program and is correlated through composition with the Program class. 
+  * Ticket - Represents the number of tickets and the price of a ticket.
+  * User - Represents the first name, last name, email address, and phone number of the customer.
 
-### Functionalitati:
-Programul permite realizarea unei rezervari de bilete la un cinema. Rezervarea se poate face in doua feluri:
+### Functionalities:
+The program allows booking tickets at a cinema. The booking can be done in two ways:
 
-1. Prin alegerea filmului dorit dintr-o lista, iar apoi a cinematografului la care ruleaza acel film.
-2. Prin alegerea cinematografului preferat dintr-o lista, iar apoi a filmului dorit, daca ruleaza la acel cinema.
+1. By selecting the preferred movie from a list, and then the cinema where that movie is playing.
+2. By selecting the preferred cinema from a list, and then the movie, if it is playing at that cinema.
 
-Odata ce au fost filmul si cinematograful, urmeaza alegerea orei de inceput si a numarului de bilete.
+Once the movie and the cinema have been chosen, the next steps are selecting the starting time and the number of tickets.
 
-Apoi trebuie completate datele de identificare pentru realizarea rezervarii:
-* nume;
-* prenume;
-* adresa de email;
-* numar de telefon.
+Then, identification details must be provided to complete the booking:
+* first name;
+* last name;
+* email address;
+* phone number.
 
-La final se afiseaza informatiile rezervarii si pretul total. Utilizatorul poate confirma rezervarea, caz in care aplicatia se finalizeaza sau o poate anula.
+At the end, the booking information and the total price are displayed. The user can confirm the booking, in which case the application ends, or cancel it.
 
-  
+## How it works:
