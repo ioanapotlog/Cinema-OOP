@@ -28,3 +28,8 @@ Then, identification details must be provided to complete the booking:
 At the end, the booking information and the total price are displayed. The user can confirm the booking, in which case the application ends, or cancel it.
 
 ## How it works:
+https://github.com/ioanapotlog/Cinema-OOP/assets/118912868/91413b54-58ea-49ec-a55a-66b2f80f6f30
+
+
+
+
